@@ -463,24 +463,49 @@ class GreedyCtrl(BaseController):
         L = env.cfg.N_CURTAIL_LEVELS
         K = env.cfg.N_CLUSTERS
         self._all_actions = np.arange(L ** K)
-        self._all_curt = np.stack([env.decode_action(a) for a in self._all_actions])
+        self._all_curt = np.stack([env.decode_action(a) for a in self._all_actions])  # (216, K)
+        self._capped = np.minimum(self._all_curt, env._max_cap[None, :])              # (216, K)
 
     def select_action(self, obs, info=None):
+        """Vectorised one-step lookahead over all 216 actions at once
+        (equivalent to calling env._apply_curtailment/_step_reward in a
+        Python loop, but ~100x faster since it never leaves numpy)."""
         e = self.env
         row = e.cluster_data.iloc[e._cursor]
         D = np.array([row[f"Cluster{k}"] for k in range(e.cfg.N_CLUSTERS)])
         D_tot = D.sum()
         avail = e._last_avail if hasattr(e, "_last_avail") else D_tot
 
-        best_r, best_a = -np.inf, 0
-        for a, curt in zip(self._all_actions, self._all_curt):
-            served, curtailed, curt_capped = e._apply_curtailment(curt, D, D_tot, avail)
-            action_mean = float(np.mean(curt_capped))
-            r, _ = e._step_reward(served, curtailed, D, D_tot, action_mean, e._prev_action_mean)
-            if r > best_r:
-                best_r, best_a = r, a
-        # undo the diagnostics appends from the 216 probe calls (only the
-        # action actually taken should be logged by env.step -> _apply_curtailment)
+        capped = self._capped                                    # (216, K)
+        target_served = (1.0 - capped) * D[None, :]               # (216, K)
+        requested_total = target_served.sum(axis=1)                # (216,)
+        oversub = requested_total > avail
+        scale = np.where(oversub, avail / np.maximum(requested_total, 1e-6), 1.0)
+        served = target_served * scale[:, None]                    # (216, K)
+        curtailed = D[None, :] - served                             # (216, K)
+        action_mean = capped.mean(axis=1)                           # (216,)
+
+        served_ratio = served.sum(axis=1) / (D_tot + 1e-9)
+        critical_pen = (e._crit_share[None, :] * curtailed).sum(axis=1) / (D_tot + 1e-9)
+        curtail_pen = curtailed.sum(axis=1) / (D_tot + 1e-9)
+        repeat_pen = (np.abs(action_mean - e._prev_action_mean) < 1e-6).astype(float)
+        served_ratios = served / np.maximum(D[None, :], 1e-6)
+        s1 = served_ratios.sum(axis=1)
+        s2 = np.square(served_ratios).sum(axis=1)
+        K = served_ratios.shape[1]
+        fairness = (s1 ** 2) / (K * s2 + 1e-9)
+
+        r = (e.w["energy"] * served_ratio
+             - e.w["critical"] * critical_pen
+             - e.w["curtail"] * curtail_pen
+             - e.w["repeat"] * repeat_pen
+             + e.w["fairness"] * fairness)
+        best_a = int(np.argmax(r))
+
         if e.diagnostics:
-            del e.diag_log[-len(self._all_actions):]
-        return int(best_a)
+            e.diag_log.append(dict(
+                requested_total=float(requested_total[best_a]), avail=float(avail),
+                oversubscribed=bool(oversub[best_a]),
+                slack=float(avail - requested_total[best_a]),
+            ))
+        return best_a

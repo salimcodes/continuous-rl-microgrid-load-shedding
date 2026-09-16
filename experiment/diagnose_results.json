@@ -1,0 +1,124 @@
+{
+  "results": {
+    "Random": {
+      "reward": 131.91814308194813,
+      "served": 24364.95597071038,
+      "curtail": 16039.133712091183,
+      "critical": -13.88275862311506,
+      "fairness": 0.9962799967078441,
+      "runtime": 0.14922209166203781,
+      "reward_std": 4.565891634244648,
+      "served_std": 754.2020823989159,
+      "curtail_std": 733.9077657286059,
+      "critical_std": 0.6554325455544913,
+      "fairness_std": 0.0007660269823215193,
+      "runtime_std": 0.06114276273081047
+    },
+    "RoundRobin": {
+      "reward": 119.5894808388192,
+      "served": 24445.701763457608,
+      "curtail": 15958.387919343955,
+      "critical": -13.82457041807252,
+      "fairness": 0.9958348088412594,
+      "runtime": 0.1853345933331487,
+      "reward_std": 4.925289787822797,
+      "served_std": 823.8566166102185,
+      "curtail_std": 789.7049091444892,
+      "critical_std": 0.714625261846926,
+      "fairness_std": 0.002136873458622594,
+      "runtime_std": 0.037812672497281756
+    },
+    "StaticPriority": {
+      "reward": 104.17052262260998,
+      "served": 23945.439731812137,
+      "curtail": 16458.649950989427,
+      "critical": -8.162210585050945,
+      "fairness": 0.9600999729319907,
+      "runtime": 0.16768806666659658,
+      "reward_std": 4.320332316663789,
+      "served_std": 693.9792975718622,
+      "curtail_std": 665.119916822451,
+      "critical_std": 0.7440292606377151,
+      "fairness_std": 0.0004742696266973912,
+      "runtime_std": 0.02235013688988468
+    },
+    "LowestPriorityFirst": {
+      "reward": 143.55079068840556,
+      "served": 26075.228894367465,
+      "curtail": 14328.860788434102,
+      "critical": -11.268408651164195,
+      "fairness": 0.9940762969347134,
+      "runtime": 0.18872474333135567,
+      "reward_std": 5.914038322778883,
+      "served_std": 958.3297799783396,
+      "curtail_std": 920.2340771760098,
+      "critical_std": 0.6771311974444636,
+      "fairness_std": 0.0010179631605139845,
+      "runtime_std": 0.026363734784502123
+    },
+    "GreedyFormula": {
+      "reward": 125.48144377905173,
+      "served": 23396.765020478215,
+      "curtail": 17007.32466232335,
+      "critical": -11.343745242681116,
+      "fairness": 0.9763045700948277,
+      "runtime": 0.2576494333305163,
+      "reward_std": 6.199650191205546,
+      "served_std": 882.3763914261083,
+      "curtail_std": 851.2681762496424,
+      "critical_std": 0.7000392540356564,
+      "fairness_std": 0.002632306229280902,
+      "runtime_std": 0.046587264981934176
+    },
+    "Greedy": {
+      "reward": 138.89832043459316,
+      "served": 24301.796545611473,
+      "curtail": 16102.29313719009,
+      "critical": -9.836427444160172,
+      "fairness": 0.9788221057933756,
+      "runtime": 3.5320731016613234,
+      "reward_std": 5.638964391314418,
+      "served_std": 891.585416339233,
+      "curtail_std": 864.1730633697842,
+      "critical_std": 0.6655101774106129,
+      "fairness_std": 0.003346534072490214,
+      "runtime_std": 0.8649340056851337
+    }
+  },
+  "diag": {
+    "Random": {
+      "oversub_frac": 0.582936507936508,
+      "mean_wasted_kw_when_undersub": 42.16803911537812,
+      "n_steps": 10080
+    },
+    "RoundRobin": {
+      "oversub_frac": 0.5819444444444445,
+      "mean_wasted_kw_when_undersub": 40.91829351595066,
+      "n_steps": 10080
+    },
+    "StaticPriority": {
+      "oversub_frac": 0.5341269841269841,
+      "mean_wasted_kw_when_undersub": 43.11018117013297,
+      "n_steps": 10080
+    },
+    "LowestPriorityFirst": {
+      "oversub_frac": 0.7307539682539682,
+      "mean_wasted_kw_when_undersub": 27.508497060289116,
+      "n_steps": 10080
+    },
+    "GreedyFormula": {
+      "oversub_frac": 0.5631944444444444,
+      "mean_wasted_kw_when_undersub": 53.45580137519409,
+      "n_steps": 10080
+    },
+    "Greedy": {
+      "oversub_frac": 0.6082341269841269,
+      "n_steps": 10080
+    }
+  },
+  "data_span": [
+    "2024-01-01 00:00:00",
+    "2024-05-31 23:00:00"
+  ],
+  "mean_demand": 240.5850082236842
+}
