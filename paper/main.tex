@@ -114,12 +114,17 @@ R_t=\;&\omega_E\textstyle\sum_k\frac{S_k}{D_{\mathrm{tot}}}-\omega_C\sum_k\pi_k\
 weights $(\omega_E,\omega_C,\omega_X,\omega_R,\omega_F)=(1.0,2.0,0.5,0.2,0.5)$, $\pi_k$ the critical-load share of cluster $k$, $\sigma_k=S_k/D_k$, and Jain's index $J(\sigma)=(\sum_k\sigma_k)^2/(K\sum_k\sigma_k^2)\in[1/K,1]$ \cite{jain1984}.
 
 \subsection{Soft Actor-Critic}
-SAC augments the discounted return with policy entropy \cite{haarnoja2018},
+Soft Actor-Critic (SAC) is the central continuous-control method in this benchmark. Its objective augments the discounted return with the entropy of the stochastic policy \cite{haarnoja2018},
 \begin{equation}
 J_{\mathrm{SAC}}(\pi)=\mathbb{E}_\pi\Big[\textstyle\sum_t\gamma^t(R_t+\alpha\mathcal{H}(\pi(\cdot\mid s_t)))\Big],
 \label{eq:sac}
 \end{equation}
-$\gamma=0.99$, temperature $\alpha$ tuned to a target entropy $-\dim(A_c)$. The actor is a diagonal-Gaussian network, tanh-squashed into $[0,0.5]^3$; twin critics, a 100k-transition replay buffer, batch size 128, and soft updates $\tau=0.005$ follow standard practice \cite{haarnoja2018}. All RL variants train for an equalised 60{,}000 steps (Section~\ref{sec:audit}).
+with discount $\gamma=0.99$ and temperature $\alpha$ tuned by gradient descent to match a target entropy $-\dim(A_c)$. The actor is a diagonal-Gaussian network mapping $s$ to $(\mu(s),\sigma(s))$, tanh-squashed into $[0,0.5]^3$ after an affine rescale. Twin critics absorb function-approximation error, the replay buffer holds 100k transitions, the batch size is 128, and the soft-update parameter is $\tau=0.005$. The critics minimise the soft Bellman residual
+\begin{equation}
+L(Q_\phi)=\mathbb{E}_{\mathcal{D}}\big[(Q_\phi(s,a)-y)^2\big],\;\; y=r+\gamma\big(\min_iQ_{\bar\phi_i}(s',a')-\alpha\log\pi_\theta(a'\mid s')\big),
+\label{eq:bellman}
+\end{equation}
+with $\bar\phi$ the slowly-updated target network, while the actor maximises the entropy-regularised soft value $L(\pi_\theta)=-\mathbb{E}[Q_\phi(s,a)-\alpha\log\pi_\theta(a\mid s)]$. The reparameterisation trick $a=\mu(s)+\sigma(s)\odot\varepsilon$, $\varepsilon\sim\mathcal{N}(0,I)$, permits low-variance backpropagation through the sampled action. All RL variants, SAC included, train for an equalised 60{,}000 environment steps (Section~\ref{sec:audit}).
 
 \subsection{Controller Zoo and Protocol}
 Table~\ref{tab:zoo} lists all controllers. Five non-adaptive baselines: Random, RoundRobin, StaticPriority (fixed 0/20/40\% per cluster), LowestPriorityFirst (proportional shed to low-priority clusters), and Greedy -- the operator-grade reference (Section~\ref{sec:audit} details its exact-lookahead implementation). Fourteen RL variants span four families: PPO \cite{schulman2017} (vanilla, wide-MLP, curriculum, tuned, and BC-warm-started from Greedy), A2C \cite{mnih2016}, TRPO \cite{schulman2015}, DQN \cite{mnih2015}, QR-DQN \cite{dabney2018}, RecurrentPPO (LSTM policy), MaskablePPO \cite{huang2022}, SAC \cite{haarnoja2018}, TD3 \cite{fujimoto2018}, and a Hybrid-PPO+Greedy ensemble routing on $\rho\ge0.4$. All implementations use stable-baselines3 \cite{raffin2021}.
@@ -160,9 +165,27 @@ Peer review of the original submission noted that Random outperformed the origin
 
 \textbf{Mechanism:} GreedyFormula chose each cluster's curtailment by rounding the exact deficit-closing fraction to the nearest of six discrete levels. This rounding has no consistent direction: under-requesting curtailment is corrected for free by the oversubscription rescale, while over-requesting directly and irreversibly wastes deliverable energy. A controller sampling curtailment broadly, like Random, is more likely to land in the ``free'' regime than one tuned to sit at the boundary -- exactly where the penalty bites.
 
-\textbf{Diagnosis:} Under the corrected, equalised-budget protocol, GreedyFormula (125.48) still trails Random (132.65), ruling out the training-budget confound (GreedyFormula has no training budget at all). GreedyFormula wastes more capacity per non-oversubscribed step (53.5~kW average) than any other heuristic -- direct evidence of the rounding bias.
+\textbf{Diagnosis:} Table~\ref{tab:audit} confirms the mechanism empirically. Under the corrected, equalised-budget protocol, GreedyFormula (125.48) still trails Random (132.65), ruling out the training-budget confound as an alternative explanation, since GreedyFormula has no training budget at all -- the discrepancy is present even when every controller is compared under an identical, fully corrected protocol. GreedyFormula also wastes more capacity per non-oversubscribed step (53.5~kW average) than any other heuristic evaluated, including Random (42.2~kW) -- direct, quantitative evidence of the rounding bias described above.
 
-\textbf{Fix:} We replace GreedyFormula with \emph{Greedy}: an exact one-step lookahead that enumerates all 216 discrete actions, applies the environment's own reward function to each (vectorised, no learned model), and selects the maximiser -- the correct operationalisation of ``greedy''. Greedy (138.90) now beats Random (132.65), resolving the anomaly, and is used as ``Greedy'' throughout the rest of this paper (Table~\ref{tab:ranking} lists GreedyFormula too, for this before/after comparison).
+\begin{table}[tbp]
+\caption{Oversubscription Audit (60 Paired Episodes)}
+\label{tab:audit}
+\begin{center}
+\scriptsize
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Controller} & \textbf{Reward} & \textbf{Oversub.\ steps} & \textbf{Wasted kW}$^{\mathrm{a}}$ \\
+\hline
+Random & 132.65 & 58.3\% & 42.2 \\
+GreedyFormula (orig.) & 125.48 & 56.3\% & \textbf{53.5} \\
+Greedy (fixed) & 138.90 & 60.8\% & n/a \\
+\hline
+\multicolumn{4}{p{7.8cm}}{\scriptsize $^{\mathrm{a}}$Mean kW left undelivered on steps that are \emph{not} oversubscribed -- i.e.\ self-inflicted loss from over-shedding, not the physically necessary rescale.}
+\end{tabular}
+\end{center}
+\end{table}
+
+\textbf{Fix:} We replace GreedyFormula with \emph{Greedy}: an exact one-step lookahead that enumerates all 216 discrete actions, applies the environment's own curtailment and reward functions to each (vectorised, no learned model, negligible extra compute), and selects the reward-maximising action. This is the correct operationalisation of ``greedy'' with respect to the actual objective, and it removes the rounding bias entirely. Greedy (138.90) now beats Random (132.65) again, resolving the anomaly, and is used as ``Greedy'' throughout the rest of this paper; GreedyFormula is retained in Table~\ref{tab:audit} and as an extra row in Table~\ref{tab:ranking} solely for this before/after comparison.
 
 \textbf{Distinct evaluation windows:} The 60 test episodes draw 168-h windows from 3{,}479 possible start hours; 59 land on distinct starts (one collision), but 56 of 59 sorted-adjacent pairs overlap temporally. We disclose this as a residual limitation rather than resolve it, since doing so would require more historical data than is available.
 
@@ -206,7 +229,13 @@ StaticPriority & 104.17 $\pm$ 4.32 & 0.960 & $<$0.001 \\
 \end{center}
 \end{table}
 
-Averaged across five seeds rather than seed~42 alone, TD3 ($145.0\pm6.0$) is nominally \emph{above} SAC ($138.6\pm4.7$) and LowestPriorityFirst -- the opposite ordering from Table~\ref{tab:ranking}. PPO-Tuned is the least seed-stable headline controller (std~4.8, range 103--115); PPO-Large the most ($128.6\pm1.8$). A single-seed comparison, as in the original submission, can therefore flip the ranking between the two strongest continuous-control methods.
+Averaged across five seeds rather than seed~42 alone, TD3 ($145.0\pm6.0$) is nominally \emph{above} SAC ($138.6\pm4.7$) and LowestPriorityFirst -- the opposite ordering from Table~\ref{tab:ranking} (Fig.~\ref{fig:seeds}). PPO-Tuned is the least seed-stable headline controller (std~4.8, range 103--115); PPO-Large the most ($128.6\pm1.8$), with MaskablePPO ($123.8\pm6.0$) intermediate. A single-seed comparison, as in the original submission, can therefore flip the reported ranking between the two strongest continuous-control methods, which is why we report the full seed distribution rather than a point estimate.
+
+\begin{figure}[tbp]
+\centerline{\includegraphics[width=0.92\linewidth]{figures/fig3_seed_robustness.png}}
+\caption{Per-seed mean episode reward for the five headline controllers, 5 seeds each. TD3's median exceeds SAC's despite SAC winning on the single seed (42) used for the paired comparison in Table~\ref{tab:ranking}.}
+\label{fig:seeds}
+\end{figure}
 
 \subsection{Per-Regime Behaviour: A Reversed Finding}
 Table~\ref{tab:regime} and Fig.~\ref{fig:regime} break down the top controllers by regime. The original submission's secondary headline claim was that SAC's advantage over Greedy is \emph{largest} under Emergency deficit ($2.6\times$). With the corrected Greedy, this reverses: Greedy now leads SAC in four of five regimes, including Emergency (47.83 vs.\ 45.26), with SAC ahead only narrowly in Moderate.
@@ -243,7 +272,13 @@ The audit shows the Random-beats-Greedy anomaly was a fixable implementation det
 
 The corrected results support a more modest, better-evidenced claim than the original submission: SAC remains competitive with the strongest heuristics and clearly ahead of every discrete-action RL variant, but no longer straightforwardly beats a correctly implemented Greedy by a wide margin, nor is it indistinguishable from the strongest heuristic. Three practitioner takeaways follow: cast curtailment as continuous rather than discretising, since every discrete RL variant underperforms both continuous-control methods and the top two heuristics; benchmark against a \emph{correctly implemented} operator-grade baseline before crediting RL with a win, since a plausible-looking heuristic can be silently miscalibrated in a way that specifically inflates RL's apparent advantage under high-stakes conditions; and report seed-to-seed variance for any headline claim, since the SAC-vs-TD3 ranking itself reverses across seeds.
 
-\emph{Reward-weight sensitivity.} Re-evaluating the trained SAC policy under $\omega_C\in\{0.5,1,2,4\}$ and $\omega_F\in\{0,0.5,1,2\}$ shows reward scaling monotonically with each weight (increasing in $\omega_F$, decreasing in $\omega_C$), consistent with a policy that already achieves near-maximal fairness ($J\approx0.999$) and low critical-cluster curtailment rather than trading one off against the other.
+\emph{Reward-weight sensitivity.} Re-evaluating the trained SAC policy (unchanged network weights) under reward weights $\omega_C\in\{0.5,1,2,4\}$ and $\omega_F\in\{0,0.5,1,2\}$ (Fig.~\ref{fig:weights}) shows reward scaling monotonically with each weight -- increasing in $\omega_F$, decreasing in $\omega_C$ -- consistent with a policy that already achieves near-maximal fairness ($J\approx0.999$) and low critical-cluster curtailment: reweighting a term the policy already satisfies mechanically rescales the reward rather than exposing a hidden trade-off the policy is exploiting. This carries forward the original notebook's reward-sensitivity analysis (Section~16) onto the corrected agent.
+
+\begin{figure}[tbp]
+\centerline{\includegraphics[width=0.8\linewidth]{figures/fig5_weight_heatmap.png}}
+\caption{Reward sensitivity of the trained SAC policy to the critical-load weight $\omega_C$ and fairness weight $\omega_F$. Reward scales monotonically with each, consistent with a policy that already scores well on both rather than trading one off against the other.}
+\label{fig:weights}
+\end{figure}
 
 \emph{Eight feeders vs.\ three clusters.} The 55 buildings are wired across eight feeders (Section~III-A), but shedding decisions use the coarser three-cluster granularity the Works and Physical Planning Department applies operationally; the feeder count describes physical topology only, not a second control granularity.
 
