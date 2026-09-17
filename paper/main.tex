@@ -112,20 +112,20 @@ Table~\ref{tab:zoo} lists all controllers. Five non-adaptive baselines: Random, 
 \label{tab:zoo}
 \begin{center}
 \scriptsize
-\begin{tabular}{|l|l|p{3.6cm}|}
+\begin{tabular}{|p{2.1cm}|p{1.3cm}|p{3.6cm}|}
 \hline
 \textbf{Name} & \textbf{Family} & \textbf{Key design choice} \\
 \hline
 Random & heuristic & uniform action \\
-RoundRobin & heuristic & cyclic enumeration \\
-StaticPriority & heuristic & fixed (0,20,40)\% per cluster \\
-LowestPriorityFirst & heuristic & proportional shed to low-priority clusters \\
+Round\-Robin & heuristic & cyclic enumeration \\
+Static\-Priority & heuristic & fixed (0,20,40)\% per cluster \\
+Lowest\-Priority\-First & heuristic & proportional shed to low-priority clusters \\
 Greedy & heuristic & exact one-step reward-maximising lookahead over 216 actions \\
 PPO / -Large / -Curriculum / -Tuned / -BC & policy gradient & vanilla; 256-unit MLP; staged scenarios; long rollouts; Greedy-cloned warm-start \\
 A2C & actor-critic & synchronous on-policy \\
 DQN / QR-DQN & value-based & replay 100k; quantile-regression value \\
-RecurrentPPO & policy gradient & LSTM policy \\
-MaskablePPO & policy gradient & infeasible-action masking \\
+Recurrent\-PPO & policy gradient & LSTM policy \\
+Maskable\-PPO & policy gradient & infeasible-action masking \\
 TRPO & policy gradient & trust-region update \\
 SAC / TD3 & off-policy AC & continuous Box$([0,0.5])^3$ \\
 Hybrid-PPO+Greedy & ensemble & Greedy if $\rho\ge0.4$, PPO otherwise \\
