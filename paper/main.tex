@@ -1,16 +1,32 @@
-\documentclass[conference]{IEEEtran}
+\documentclass[9pt,conference]{IEEEtran}
 \IEEEoverridecommandlockouts
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{textcomp}
-\usepackage{xcolor}
+\usepackage{times}
+\usepackage{fancyhdr}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+% --- IEEE NIGERCON 2026 camera-ready header/footer (per submission instructions) ---
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize IEEE NIGERCON 2026}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{firstpage}{%
+  \fancyhf{}
+  \fancyhead[L]{\footnotesize IEEE NIGERCON 2026}
+  \fancyfoot[C]{\footnotesize 979-8-3195-3455-2/26/\$31.00~\copyright~2026 IEEE}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
+
 \begin{document}
 
-\title{Continuous-Action Reinforcement Learning for Resilient Campus Microgrid Load Shedding}
+\title{\fontsize{24}{28}\selectfont\normalfont Continuous-Action Reinforcement Learning for Resilient Campus Microgrid Load Shedding}
 
 \author{
 \IEEEauthorblockN{Salim Olanrewaju Oyinlola}
@@ -33,9 +49,10 @@ babayomi@ieee.org}
 }
 
 \maketitle
+\thispagestyle{firstpage}
 
 \begin{abstract}
-Adaptive load shedding on sub-Saharan campus microgrids remains dominated by fixed-priority and one-step greedy controllers. This paper benchmarks fourteen reinforcement learning (RL) algorithms against five non-learning controllers on the University of Lagos campus microgrid, a 55-building Nigerian case study, isolating the effect of action representation across three Gym environments (216-action discrete, action-masked discrete, continuous Box). All RL variants train under an equalised 60{,}000-step budget, with the five strongest trained across five seeds. Across 60 paired episodes, continuous-action Soft Actor-Critic (SAC) scores $141.44 \pm 4.96$, narrowly behind the strongest heuristic, Lowest-Priority-First ($143.55 \pm 5.91$), and ahead of an operator-grade Greedy controller ($138.90 \pm 5.64$, Holm-corrected $p<0.001$, $d=1.46$). Averaged across seeds, TD3 ($145.0 \pm 6.0$), not SAC, is the strongest continuous-control method as a reversal from the single-seed comparison. We also audit and resolve a reviewer-identified anomaly in which a Random baseline outperformed the original Greedy controller: a discretisation-rounding bug caused Greedy to waste capacity disproportionately under severe deficit, which also reverses the original per-regime finding that RL's advantage is largest exactly there. With the bug fixed, Greedy leads SAC in four of five deficit regimes. Continuous action representation remains the decisive factor for adaptive load shedding, though its margin over strong heuristics is smaller than originally reported.
+Adaptive load shedding on sub-Saharan campus microgrids remains dominated by fixed-priority and one-step greedy controllers. This paper benchmarks fourteen reinforcement learning (RL) algorithms against five non-learning controllers on the University of Lagos campus microgrid, a 55-building Nigerian case study, isolating the effect of action representation across three Gym environments (216-action discrete, action-masked discrete, continuous Box). All RL variants train under an equalised 60{,}000-step budget, with the five strongest trained across five seeds. Across 60 paired episodes, continuous-action Soft Actor-Critic (SAC) scores $141.44 \pm 4.96$, narrowly behind the strongest heuristic, Lowest-Priority-First ($143.55 \pm 5.91$), and ahead of an operator-grade Greedy controller ($138.90 \pm 5.64$, Holm-corrected $p<0.001$, $d=1.46$). Averaged across seeds, TD3 ($145.0 \pm 6.0$), not SAC, is the strongest continuous-control method -- a reversal from the single-seed comparison. We also audit and resolve a reviewer-identified anomaly in which a Random baseline outperformed the original Greedy controller: a discretisation-rounding bug caused Greedy to waste capacity disproportionately under severe deficit, which also reverses the original per-regime finding that RL's advantage is largest exactly there. With the bug fixed, Greedy leads SAC in four of five deficit regimes. Continuous action representation remains the decisive factor for adaptive load shedding, though its margin over strong heuristics is smaller than originally reported.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -43,7 +60,7 @@ reinforcement learning, load shedding, microgrid, soft actor-critic, continuous 
 \end{IEEEkeywords}
 
 \section{Introduction}
-Electricity supply in sub-Saharan Africa remains chronically deficient; Nigeria's national grid dispatches 3.5--5~GW against a suppressed demand of 25--30~GW \cite{iea2022,akinbulire2014}. Large institutional consumers operate as de facto microgrids that must apportion a finite, intermittent supply through controlled load shedding. The University of Lagos, 55 buildings across eight feeders, is our case study.
+Electricity supply in sub-Saharan Africa remains chronically deficient; Nigeria's national grid dispatches 3.5--5~GW against a suppressed demand of 25--30~GW \cite{iea2022,akinbulire2014}. Large institutional consumers operate as de facto microgrids that must apportion a finite, intermittent supply through controlled load shedding. The University of Lagos, with 55 buildings across eight feeders, is our case study.
 
 Conventional controllers rely on under-frequency relays and fixed priority tables \cite{anderson1992}: auditable, but indifferent to time-varying supply. Reinforcement Learning (RL) offers an adaptive alternative: an agent observes a state $s_t$, chooses an action $a_t$, and receives a reward $r_t$ and next state $s_{t+1}$ (Fig.~\ref{fig:loop}), learning a curtailment policy directly from experience \cite{sutton2018}, now a mature paradigm in the smart-grid literature \cite{vazquezcanteli2019}.
 
@@ -67,7 +84,7 @@ Soft Actor-Critic \cite{haarnoja2018} and TD3 \cite{fujimoto2018} are the domina
 \section{System Model, MDP, and Algorithm Zoo}
 
 \subsection{Case Study: University of Lagos Campus}
-We instantiate load shedding on the UNILAG campus, $N=55$ buildings indexed $b$, each with hourly demand $d_b(t)$ (kW). An expert mapping from the campus Works and Physical Planning Department partitions buildings into $K=3$ clusters: Cluster~0 (Critical: medical, server rooms, labs, library, senate), Cluster~1 (Academic--Administrative), Cluster~2 (Residential--Commercial). Cluster demand $D_k(t)=\sum_{b\in k}d_b(t)$. Each building has priority $p_b\in\{1,\dots,10\}$, a criticality flag, and curtailment cap $c_b^{\max}\in[0,0.5]$; cluster caps $c_k^{\max}$ take the member maximum.
+We instantiate load shedding on the UNILAG campus with $N=55$ buildings indexed $b$, each with hourly demand $d_b(t)$ (kW). An expert mapping from the campus Works and Physical Planning Department partitions buildings into $K=3$ clusters: Cluster~0 (Critical: medical, server rooms, labs, library, senate), Cluster~1 (Academic--Administrative), Cluster~2 (Residential--Commercial). Cluster demand $D_k(t)=\sum_{b\in k}d_b(t)$. Each building has priority $p_b\in\{1,\dots,10\}$, a criticality flag, and curtailment cap $c_b^{\max}\in[0,0.5]$; cluster caps $c_k^{\max}$ take the member maximum.
 
 \subsection{RL Formulation and MDP}
 We formalise the problem as a finite-horizon MDP $M=(S,A,P,R,T)$, $T=168$~h (one week). At each hour the agent observes $s_t\in S\subseteq\mathbb{R}^{10}$, chooses $a_t$, and receives reward $R_t$ and next state $s_{t+1}$, learning a policy $\pi(a\mid s)$ maximising $G=\mathbb{E}[\sum_t\gamma^tR_t]$. Off-policy actor-critic methods (SAC, TD3) maintain an actor $\pi_\theta$ and critic $Q_\phi$ trained from a replay buffer; on-policy methods (PPO, A2C, TRPO) update $\theta$ along gradients estimated from rollouts; value-based methods (DQN, QR-DQN) learn $Q(s,a)$ and act greedily with respect to it.
@@ -139,7 +156,7 @@ The dataset spans five months (3{,}648~h, 1~Jan--31~May~2024) of hourly demand f
 
 \section{Root-Cause Audit: The Random-vs-Greedy Anomaly}
 \label{sec:audit}
-Review of the original submission noted Random outperforming the original, formula-based Greedy (GreedyFormula) and 11 of 14 RL variants, flagging a possible confound in the oversubscription rescale (Section III-D). We audit this directly.
+Peer review of the original submission noted that Random outperformed the original, formula-based Greedy (GreedyFormula) and 11 of 14 RL variants, flagging a possible confound in the oversubscription rescale (Section III-C). We audit this directly.
 
 \textbf{Mechanism:} GreedyFormula chose each cluster's curtailment by rounding the exact deficit-closing fraction to the nearest of six discrete levels. This rounding has no consistent direction: under-requesting curtailment is corrected for free by the oversubscription rescale, while over-requesting directly and irreversibly wastes deliverable energy. A controller sampling curtailment broadly, like Random, is more likely to land in the ``free'' regime than one tuned to sit at the boundary -- exactly where the penalty bites.
 
@@ -152,7 +169,7 @@ Review of the original submission noted Random outperforming the original, formu
 \section{Results}
 
 \subsection{Headline}
-Table~\ref{tab:ranking} ranks all controllers on seed 42, used for pairwise inference. LowestPriorityFirst leads narrowly (143.55), SAC is a close second (141.44), and the corrected Greedy is third (138.90) -- a different picture from the original submission, where SAC was statistically indistinguishable from LowestPriorityFirst ($p=0.15$) and beat Greedy by $+16.77$. Here, every comparison against SAC is significant after Holm correction (all $p<0.001$), reflecting the statistical power of pairing 60 low-variance episodes rather than large practical effects: SAC's margin over Greedy is $+2.54$ ($d=1.46$), an order of magnitude smaller than originally reported, and SAC itself trails LowestPriorityFirst by $-2.12$. GreedyFormula (125.48, marked~$\dagger$) sits below Random even under this corrected protocol (Section~\ref{sec:audit}).
+Table~\ref{tab:ranking} ranks all controllers using the seed-42 run, also used for pairwise inference. LowestPriorityFirst leads narrowly (143.55), SAC is a close second (141.44), and the corrected Greedy is third (138.90) -- a different picture from the original submission, where SAC was statistically indistinguishable from LowestPriorityFirst ($p=0.15$) and beat Greedy by $+16.77$. Here, every comparison against SAC is significant after Holm correction (all $p<0.001$), reflecting the statistical power of pairing 60 low-variance episodes rather than large practical effects: SAC's margin over Greedy is $+2.54$ ($d=1.46$), less than one sixth of the $+16.77$ originally reported, and SAC itself trails LowestPriorityFirst by $-2.12$. GreedyFormula (125.48, marked~$\dagger$) sits below Random even under this corrected protocol (Section~\ref{sec:audit}).
 
 \begin{table}[tbp]
 \caption{Controller Ranking (60 Paired Episodes, Holm-Corrected vs.\ SAC)}
