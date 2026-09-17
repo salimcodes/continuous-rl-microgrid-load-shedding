@@ -13,19 +13,19 @@
 \title{Continuous-Action Reinforcement Learning for Resilient Campus Microgrid Load Shedding}
 
 \author{
-\IEEEauthorblockN{1\textsuperscript{st} Salim Oyinlola}
+\IEEEauthorblockN{Salim Olanrewaju Oyinlola}
 \IEEEauthorblockA{\textit{Electrical and Electronics Engineering} \\
 \textit{University of Lagos}\\
 Akoka, Nigeria \\
 salimoyinlola@gmail.com}
 \and
-\IEEEauthorblockN{2\textsuperscript{nd} Peter Olabisi Oluseyi}
+\IEEEauthorblockN{Peter Olabisi Oluseyi}
 \IEEEauthorblockA{\textit{Electrical and Electronics Engineering} \\
 \textit{University of Lagos}\\
 Akoka, Nigeria \\
 poluseyi@unilag.edu}
 \and
-\IEEEauthorblockN{3\textsuperscript{rd} Oluleke Babayomi}
+\IEEEauthorblockN{Oluleke O. Babayomi}
 \IEEEauthorblockA{\textit{ICT Convergence Research Center} \\
 \textit{Kumoh National Institute of Technology}\\
 Gumi, South Korea \\
@@ -35,7 +35,7 @@ babayomi@ieee.org}
 \maketitle
 
 \begin{abstract}
-Adaptive load shedding on sub-Saharan campus microgrids remains dominated by fixed-priority and one-step greedy controllers. This paper benchmarks fourteen reinforcement learning (RL) algorithms against five non-learning controllers on the University of Lagos campus microgrid, a 55-building Nigerian case study, isolating the effect of action representation across three Gym environments (216-action discrete, action-masked discrete, continuous Box). All RL variants train under an equalised 60{,}000-step budget, with the five strongest trained across five seeds. Across 60 paired episodes, continuous-action Soft Actor-Critic (SAC) scores $141.44 \pm 4.96$, narrowly behind the strongest heuristic, Lowest-Priority-First ($143.55 \pm 5.91$), and ahead of an operator-grade Greedy controller ($138.90 \pm 5.64$, Holm-corrected $p<0.001$, $d=1.46$). Averaged across seeds, TD3 ($145.0 \pm 6.0$), not SAC, is the strongest continuous-control method -- a reversal from the single-seed comparison. We also audit and resolve a reviewer-identified anomaly in which a Random baseline outperformed the original Greedy controller: a discretisation-rounding bug caused Greedy to waste capacity disproportionately under severe deficit, which also reverses the original per-regime finding that RL's advantage is largest exactly there. With the bug fixed, Greedy leads SAC in four of five deficit regimes. Continuous action representation remains the decisive factor for adaptive load shedding, though its margin over strong heuristics is smaller than originally reported.
+Adaptive load shedding on sub-Saharan campus microgrids remains dominated by fixed-priority and one-step greedy controllers. This paper benchmarks fourteen reinforcement learning (RL) algorithms against five non-learning controllers on the University of Lagos campus microgrid, a 55-building Nigerian case study, isolating the effect of action representation across three Gym environments (216-action discrete, action-masked discrete, continuous Box). All RL variants train under an equalised 60{,}000-step budget, with the five strongest trained across five seeds. Across 60 paired episodes, continuous-action Soft Actor-Critic (SAC) scores $141.44 \pm 4.96$, narrowly behind the strongest heuristic, Lowest-Priority-First ($143.55 \pm 5.91$), and ahead of an operator-grade Greedy controller ($138.90 \pm 5.64$, Holm-corrected $p<0.001$, $d=1.46$). Averaged across seeds, TD3 ($145.0 \pm 6.0$), not SAC, is the strongest continuous-control method as a reversal from the single-seed comparison. We also audit and resolve a reviewer-identified anomaly in which a Random baseline outperformed the original Greedy controller: a discretisation-rounding bug caused Greedy to waste capacity disproportionately under severe deficit, which also reverses the original per-regime finding that RL's advantage is largest exactly there. With the bug fixed, Greedy leads SAC in four of five deficit regimes. Continuous action representation remains the decisive factor for adaptive load shedding, though its margin over strong heuristics is smaller than originally reported.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -141,13 +141,13 @@ The dataset spans five months (3{,}648~h, 1~Jan--31~May~2024) of hourly demand f
 \label{sec:audit}
 Review of the original submission noted Random outperforming the original, formula-based Greedy (GreedyFormula) and 11 of 14 RL variants, flagging a possible confound in the oversubscription rescale (Section III-D). We audit this directly.
 
-\textbf{Mechanism.} GreedyFormula chose each cluster's curtailment by rounding the exact deficit-closing fraction to the nearest of six discrete levels. This rounding has no consistent direction: under-requesting curtailment is corrected for free by the oversubscription rescale, while over-requesting directly and irreversibly wastes deliverable energy. A controller sampling curtailment broadly, like Random, is more likely to land in the ``free'' regime than one tuned to sit at the boundary -- exactly where the penalty bites.
+\textbf{Mechanism:} GreedyFormula chose each cluster's curtailment by rounding the exact deficit-closing fraction to the nearest of six discrete levels. This rounding has no consistent direction: under-requesting curtailment is corrected for free by the oversubscription rescale, while over-requesting directly and irreversibly wastes deliverable energy. A controller sampling curtailment broadly, like Random, is more likely to land in the ``free'' regime than one tuned to sit at the boundary -- exactly where the penalty bites.
 
-\textbf{Diagnosis.} Under the corrected, equalised-budget protocol, GreedyFormula (125.48) still trails Random (132.65), ruling out the training-budget confound (GreedyFormula has no training budget at all). GreedyFormula wastes more capacity per non-oversubscribed step (53.5~kW average) than any other heuristic -- direct evidence of the rounding bias.
+\textbf{Diagnosis:} Under the corrected, equalised-budget protocol, GreedyFormula (125.48) still trails Random (132.65), ruling out the training-budget confound (GreedyFormula has no training budget at all). GreedyFormula wastes more capacity per non-oversubscribed step (53.5~kW average) than any other heuristic -- direct evidence of the rounding bias.
 
-\textbf{Fix.} We replace GreedyFormula with \emph{Greedy}: an exact one-step lookahead that enumerates all 216 discrete actions, applies the environment's own reward function to each (vectorised, no learned model), and selects the maximiser -- the correct operationalisation of ``greedy''. Greedy (138.90) now beats Random (132.65), resolving the anomaly, and is used as ``Greedy'' throughout the rest of this paper (Table~\ref{tab:ranking} lists GreedyFormula too, for this before/after comparison).
+\textbf{Fix:} We replace GreedyFormula with \emph{Greedy}: an exact one-step lookahead that enumerates all 216 discrete actions, applies the environment's own reward function to each (vectorised, no learned model), and selects the maximiser -- the correct operationalisation of ``greedy''. Greedy (138.90) now beats Random (132.65), resolving the anomaly, and is used as ``Greedy'' throughout the rest of this paper (Table~\ref{tab:ranking} lists GreedyFormula too, for this before/after comparison).
 
-\textbf{Distinct evaluation windows.} The 60 test episodes draw 168-h windows from 3{,}479 possible start hours; 59 land on distinct starts (one collision), but 56 of 59 sorted-adjacent pairs overlap temporally. We disclose this as a residual limitation rather than resolve it, since doing so would require more historical data than is available.
+\textbf{Distinct evaluation windows:} The 60 test episodes draw 168-h windows from 3{,}479 possible start hours; 59 land on distinct starts (one collision), but 56 of 59 sorted-adjacent pairs overlap temporally. We disclose this as a residual limitation rather than resolve it, since doing so would require more historical data than is available.
 
 \section{Results}
 
