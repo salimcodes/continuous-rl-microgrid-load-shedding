@@ -1,0 +1,14 @@
+{
+  "best_rl": "SAC",
+  "n_distinct_windows": {
+    "n_episodes": 60,
+    "n_distinct_start_hours": 59,
+    "n_possible_start_hours": 3479,
+    "overlapping_adjacent_pairs": 56
+  },
+  "data_span": [
+    "2024-01-01 00:00:00",
+    "2024-05-31 23:00:00"
+  ],
+  "mean_demand_kw": 240.5850082236842
+}

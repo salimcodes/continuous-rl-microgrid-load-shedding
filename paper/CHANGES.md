@@ -20,29 +20,46 @@ controller that samples curtailment broadly (e.g. Random) is more likely to
 land in the "free rescale" regime than a controller specifically tuned to
 sit at the boundary — exactly where the rounding penalty bites hardest.
 
-**Empirical confirmation** (`experiment/diagnose.py`, real dataset):
+**Empirical confirmation** (final equalised-budget run, `experiment/results/summary.csv` +
+`experiment/diagnose_results.json`, real dataset, 60 paired episodes):
 
 | Controller | Reward | Oversubscribed steps | Wasted kW when not oversubscribed |
 |---|---|---|---|
-| Random | 131.9 | 58.3% | 42.2 |
-| RoundRobin | 119.6 | 58.2% | 40.9 |
-| StaticPriority | 104.2 | 53.4% | 43.1 |
-| LowestPriorityFirst | 143.6 | 73.1% | 27.5 |
-| GreedyFormula (original) | 125.5 | 56.3% | **53.5** |
-| **Greedy (exact lookahead, fixed)** | **138.9** | 60.8% | n/a |
+| Random | 132.65 | 58.3% | 42.2 |
+| RoundRobin | 119.59 | 58.2% | 40.9 |
+| StaticPriority | 104.17 | 53.4% | 43.1 |
+| LowestPriorityFirst | 143.55 | 73.1% | 27.5 |
+| GreedyFormula (original) | 125.48 | 56.3% | **53.5** |
+| **Greedy (exact lookahead, fixed)** | **138.90** | 60.8% | n/a |
 
 GreedyFormula wastes the most capacity of any controller when it isn't
-rescued by the auto-clamp — direct evidence of the rounding bias.
+rescued by the auto-clamp — direct evidence of the rounding bias. Critically,
+GreedyFormula *still* trails Random under the fully corrected, equalised-budget
+protocol used for the final numbers above, which rules out the training-budget
+confound (point 2 below) as an alternative explanation — the effect persists
+even though GreedyFormula is a rule-based heuristic with no training budget at
+all.
 
 **Fix.** `GreedyCtrl` in `experiment/campus_env.py` now enumerates all 216
 discrete actions at each step, applies the environment's own reward
-function to each (vectorised, no retraining involved), and picks the
-reward-maximising one. This is the correct operationalisation of "greedy"
-and removes the discretisation bias entirely. With the fix, Greedy (138.9)
-beats Random (131.9) again, resolving the anomaly.
+function to each (vectorised for speed — no Python loop, no retraining
+involved), and picks the reward-maximising one. This is the correct
+operationalisation of "greedy" and removes the discretisation bias entirely.
+With the fix, Greedy (138.90) beats Random (132.65) again, resolving the
+anomaly.
 
 The original `GreedyFormula` is kept in the codebase (not deleted) so the
 before/after comparison above is reproducible.
+
+**Unexpected downstream consequence: the per-regime finding reverses.** The
+original paper's secondary headline claim was that SAC's advantage over Greedy
+is largest under Emergency-level deficit (2.6x). With the corrected Greedy,
+this reverses: Greedy now leads SAC in 4 of 5 regimes, *including* Emergency
+(47.83 vs 45.26) — see `experiment/results/sensitivity.csv`. The mechanism is
+the same rounding bias: it scales with the size of the required cut, so it hurt
+GreedyFormula most precisely under severe deficit, which is exactly the
+condition the original paper highlighted as RL's strongest use case. This is
+reported transparently in the camera-ready rather than preserved.
 
 ## 2. Unequal training budgets
 
@@ -58,12 +75,27 @@ from out of the total number of possible 168h windows in the dataset, and
 how many adjacent episode pairs have overlapping demand windows. See
 `results/meta.json` -> `n_distinct_windows`.
 
+Result: 59 of 60 episodes land on distinct start hours (1 exact collision)
+out of 3,479 possible start hours in the 5-month dataset, but 56 of the 59
+sorted-adjacent episode pairs have starts within 168h of each other and thus
+temporally overlapping demand histories — disclosed as a residual limitation
+in the paper (Section IV) rather than resolved, since fixing it would need
+either more historical data than is available or synthetic extrapolation.
+
 ## 4. Single training seed
 
 The five headline controllers (SAC, TD3, PPO-Tuned, MaskablePPO, PPO-Large)
 are trained across 5 seeds (42-46) and reported as mean +/- across-seed
 standard deviation (`results/multiseed_summary.csv`), in addition to the
 primary seed-42 comparison table.
+
+**This surfaced a real finding, not just a robustness check.** On seed 42
+(used for the headline pairwise comparison), SAC (141.44) beats TD3 (135.60).
+Averaged across all 5 seeds, TD3 (145.01 +/- 6.02) is nominally *above* SAC
+(138.56 +/- 4.67) — the ranking of the two strongest continuous-control
+methods flips depending on which seed (or how many) you report. This is
+disclosed explicitly in the paper rather than only reporting the
+seed-42 snapshot.
 
 ## 5. No multiple-comparison correction
 

@@ -60,7 +60,10 @@ ms = pd.read_csv(RESULTS / "multiseed.csv")
 plt.figure(figsize=(9, 5))
 ctrls = ms["Controller"].unique().tolist()
 data = [ms.loc[ms.Controller == c, "RewardMean"].values for c in ctrls]
-bp = plt.boxplot(data, labels=ctrls, patch_artist=True)
+try:
+    bp = plt.boxplot(data, tick_labels=ctrls, patch_artist=True)
+except TypeError:
+    bp = plt.boxplot(data, labels=ctrls, patch_artist=True)
 for patch in bp["boxes"]:
     patch.set_facecolor("#17becf")
 plt.ylabel("Per-seed mean episode reward")

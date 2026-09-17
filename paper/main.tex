@@ -35,8 +35,7 @@ babayomi@ieee.org}
 \maketitle
 
 \begin{abstract}
-% TODO: update headline numbers once experiment/run_all.py finishes (see paper/CHANGES.md)
-Adaptive load shedding on sub-Saharan campus microgrids remains dominated by fixed-priority and one-step greedy rule-based controllers, despite their limited ability to adapt to rapidly changing operating conditions. This paper benchmarks fourteen reinforcement learning (RL) algorithms, where an agent learns optimal sequential decision-making through trial-and-error interaction with an environment, against five conventional non-learning controllers using the University of Lagos campus microgrid, a 55-building real-world Nigerian case study. To isolate the effect of action representation, all controllers are evaluated under identical system dynamics in three OpenAI Gym environments differing only in action space: a 216-action discrete grid, an action-masked discrete grid, and a three-dimensional continuous Box space. All fourteen RL variants are trained for an equalised 60{,}000 environment steps and, for the five headline controllers, across five random seeds, addressing budget and seed-robustness concerns raised in review. Across sixty paired evaluation episodes, continuous-action Soft Actor-Critic (SAC) achieves a mean episode reward of \textbf{TODO} $\pm$ \textbf{TODO}, compared with the operator-grade Greedy controller at \textbf{TODO} $\pm$ \textbf{TODO} (paired $t$-test, Holm-corrected $p$ \textbf{TODO}, Cohen's $d$ \textbf{TODO}). The advantage is most pronounced under the Emergency operating regime, where available supply is only 20--40\% of demand. We additionally audit and resolve an anomaly identified by peer review, in which the Random baseline outperformed the original formula-based Greedy controller: we show this stemmed from a discretisation-rounding bias in that controller interacting with the environment's supply-balancing rescale, replace it with an exact one-step-lookahead Greedy, and report the corrected ranking. These findings show that continuous action representation, rather than the choice of RL algorithm itself, is the decisive factor for adaptive load shedding in campus microgrids.
+Adaptive load shedding on sub-Saharan campus microgrids remains dominated by fixed-priority and one-step greedy rule-based controllers, despite their limited ability to adapt to rapidly changing operating conditions. This paper benchmarks fourteen reinforcement learning (RL) algorithms, where an agent learns optimal sequential decision-making through trial-and-error interaction with an environment, against five conventional non-learning controllers using the University of Lagos campus microgrid, a 55-building real-world Nigerian case study. To isolate the effect of action representation, all controllers are evaluated under identical system dynamics in three OpenAI Gym environments differing only in action space: a 216-action discrete grid, an action-masked discrete grid, and a three-dimensional continuous Box space. All fourteen RL variants are trained under an equalised 60{,}000-step budget and, for the five headline controllers, across five random seeds, addressing budget and seed-robustness concerns raised in review. Across sixty paired evaluation episodes, continuous-action Soft Actor-Critic (SAC) achieves a mean episode reward of $141.44 \pm 4.96$, a small but statistically significant margin below the strongest deterministic controller, Lowest-Priority-First ($143.55 \pm 5.91$; Holm-corrected $p < 0.001$), and above the operator-grade Greedy controller at $138.90 \pm 5.64$ (Holm-corrected $p < 0.001$, Cohen's $d = 1.46$). Averaged across five training seeds, TD3 ($145.0 \pm 6.0$) is nominally the strongest continuous-control method overall, ahead of SAC ($138.6 \pm 4.7$) -- a reversal from the single-seed comparison that underscores why seed-robustness reporting matters. Per-regime analysis reveals a reversal of the original submission's secondary finding: the corrected Greedy now leads SAC in four of five deficit regimes, including Emergency (where available supply is only 20--40\% of demand), rather than SAC dominating precisely under the most severe deficits as previously reported; SAC nonetheless remains within a few percent of Greedy in every regime and continues to substantially outperform weaker heuristics such as StaticPriority throughout. We additionally audit and resolve an anomaly identified by peer review, in which the Random baseline outperformed the original formula-based Greedy controller: we trace this to a discretisation-rounding bias in that controller interacting with the environment's supply-balancing rescale, replace it with an exact one-step-lookahead Greedy, and confirm under the corrected, equalised-budget protocol that the original formula-based Greedy ($125.48 \pm 6.20$) still trails Random ($132.65 \pm 4.52$), ruling out the training-budget confound as the anomaly's cause. These findings show that continuous action representation, rather than the choice of RL algorithm itself, remains the decisive factor for adaptive load shedding in campus microgrids, though the margin over the best deterministic heuristics is more modest than originally reported.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -63,7 +62,7 @@ The relevant literature spans three traditions whose limitations together motiva
 
 The second tradition applies Reinforcement Learning to grid and demand-response problems and is surveyed by V\'azquez-Canteli and Nagy \cite{vazquezcanteli2019}. Within this body of work, Mocanu et al.\ demonstrate that deep Q-learning matches expert-tuned heuristics for residential demand response \cite{mocanu2019}, although their evaluation considers a single household with mild deficits. Ye et al.\ extend the analysis to a residential multi-energy system and report that continuous control outperforms discrete baselines \cite{ye2020}, yet their case study lacks a multi-cluster priority structure. The broader review by Cao et al.\ spans the full power system \cite{cao2020}, but no published comparison evaluates an off-policy actor-critic agent against the one-step Greedy controller used in practice, nor reports performance separately under deep supply deficits. Closing those two gaps is a central contribution of this paper.
 
-The third tradition concerns the design of the action space. Soft Actor-Critic \cite{haarnoja2018} and Twin-Delayed Deep Deterministic Policy Gradient \cite{fujimoto2018} are the dominant off-policy actor-critic methods for continuous control, and Du et al.\ confirm that applying continuous control to residential HVAC delivers consistent gains over discrete Q-learning \cite{du2021}. Building on this, Tang and Agrawal argue that the choice of action representation often dominates the choice of algorithm \cite{tang2020}, while Tavakoli et al.\ propose branching architectures for high-dimensional discrete actions \cite{tavakoli2018} and Huang and Onta\~n\'on analyse invalid-action masking \cite{huang2022}. We adopt these insights and, for the first time in the load-shedding setting, show that swapping a 216-action discrete grid for a three-dimensional continuous Box recovers the entire gap between Reinforcement Learning and the strongest deterministic policy. Finally, since campus shedding must remain equitable across student residences and faculty buildings, fairness matters. We adopt Jain's index \cite{jain1984}, the standard scalar measure of fairness in resource allocation, as an explicit reward term so that the agent is rewarded for spreading curtailment equitably across clusters.
+The third tradition concerns the design of the action space. Soft Actor-Critic \cite{haarnoja2018} and Twin-Delayed Deep Deterministic Policy Gradient \cite{fujimoto2018} are the dominant off-policy actor-critic methods for continuous control, and Du et al.\ confirm that applying continuous control to residential HVAC delivers consistent gains over discrete Q-learning \cite{du2021}. Building on this, Tang and Agrawal argue that the choice of action representation often dominates the choice of algorithm \cite{tang2020}, while Tavakoli et al.\ propose branching architectures for high-dimensional discrete actions \cite{tavakoli2018} and Huang and Onta\~n\'on analyse invalid-action masking \cite{huang2022}. We adopt these insights and, for the first time in the load-shedding setting, show that swapping a 216-action discrete grid for a three-dimensional continuous Box closes nearly all of the gap between Reinforcement Learning and the strongest deterministic policy, leaving only a small residual margin (Section~\ref{sec:audit}). Finally, since campus shedding must remain equitable across student residences and faculty buildings, fairness matters. We adopt Jain's index \cite{jain1984}, the standard scalar measure of fairness in resource allocation, as an explicit reward term so that the agent is rewarded for spreading curtailment equitably across clusters.
 
 \section{System Model, MDP, and Algorithm Zoo}
 
@@ -181,39 +180,84 @@ All nineteen controllers are evaluated on the same 60 randomly seeded test episo
 
 \section{Root-Cause Audit: The Random-vs-Greedy Anomaly}
 \label{sec:audit}
-% TODO fill in numbers from experiment/diagnose_results.json and experiment/results/
 Peer review of the original submission noted that the Random baseline outperformed the formula-based Greedy controller and 11 of 14 RL variants, and flagged this as a possible confound in the environment's oversubscription rescale (Section III-D). We audit this directly.
 
 \textbf{Mechanism.} As noted in Section III-D, once a controller's requested service exceeds available power $P_a$, the environment rescales every cluster's served power proportionally so that $\sum_k S_k = P_a$ exactly, \emph{independent of how much curtailment was requested}. The original Greedy controller chose a per-cluster curtailment level by rounding the exact continuous deficit-closing fraction to the nearest of six discrete levels (0, 0.10, \ldots, 0.50). This rounding has no consistent direction: on roughly half of all steps it rounds down (the controller ends up requesting to serve \emph{more} than $P_a$ allows), which is corrected for free by the rescale above with no reward penalty; on the other half it rounds up (over-sheds), which directly and irreversibly reduces $\sum_k S_k$ below $P_a$ -- a self-inflicted, uncorrected loss. A controller such as Random that samples curtailment broadly is, by construction, more likely to land in the "free rescale" regime on any given step than a controller specifically tuned to sit near the boundary, which is exactly where the rounding penalty bites hardest.
 
-\textbf{Diagnosis.} TODO -- oversubscription frequency and mean wasted capacity per controller from \texttt{experiment/diagnose\_results.json}.
+\textbf{Diagnosis.} Table~\ref{tab:audit} confirms the mechanism empirically. The original formula-based Greedy (GreedyFormula) wastes more capacity per non-oversubscribed step (53.5~kW on average) than any other heuristic -- direct evidence of the rounding bias -- and, under the corrected, equalised-budget protocol used throughout this paper, it still trails Random (125.48 vs.\ 132.65 mean reward), ruling out the unequal training-budget confound as the anomaly's cause: the discrepancy is present even when every controller is compared under the exact same protocol, because GreedyFormula is a rule-based heuristic with no training budget at all.
 
-\textbf{Fix.} We replace the formula-based Greedy with an exact one-step-lookahead controller: at every step it enumerates all $L^K = 216$ discrete actions, applies the environment's own curtailment and reward functions to each (without mutating state), and selects the reward-maximising action. This is the correct operationalisation of "greedy" with respect to the actual objective and removes the rounding bias entirely, at negligible extra compute (216 closed-form evaluations per step, no learned model).
+\begin{table}[tbp]
+\caption{Oversubscription Audit (60 Paired Episodes)}
+\label{tab:audit}
+\begin{center}
+\footnotesize
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Controller} & \textbf{Reward} & \textbf{Oversub.\ steps} & \textbf{Wasted kW}$^{\mathrm{a}}$ \\
+\hline
+Random & 132.65 & 58.3\% & 42.2 \\
+GreedyFormula (orig.) & 125.48 & 56.3\% & \textbf{53.5} \\
+Greedy (fixed) & 138.90 & 60.8\% & n/a \\
+\hline
+\multicolumn{4}{l}{\footnotesize $^{\mathrm{a}}$Mean kW left undelivered on steps that are \emph{not}}\\
+\multicolumn{4}{l}{\footnotesize oversubscribed, i.e.\ self-inflicted loss from over-shedding.}
+\end{tabular}
+\end{center}
+\end{table}
 
-\textbf{Distinct evaluation windows.} Each of the 60 test episodes draws a 168-hour window whose start hour is sampled uniformly from the dataset by the per-episode seed; TODO -- report the number of distinct (non-overlapping-start) windows actually exercised across the 60 episodes and, if overlap is material, the mitigation applied.
+\textbf{Fix.} We replace the formula-based Greedy with an exact one-step-lookahead controller: at every step it enumerates all $L^K = 216$ discrete actions, applies the environment's own curtailment and reward functions to each (without mutating state), and selects the reward-maximising action. This is the correct operationalisation of "greedy" with respect to the actual objective and removes the rounding bias entirely, at negligible extra compute (216 closed-form evaluations per step, vectorised, no learned model). With the fix, Greedy (138.90) again beats Random (132.65), resolving the anomaly; the original GreedyFormula is retained in Table~\ref{tab:audit} purely for this before/after comparison and does not appear in the main controller ranking (Table~\ref{tab:ranking}).
+
+\textbf{Distinct evaluation windows.} Each of the 60 test episodes draws a 168-hour window whose start hour is sampled uniformly from 3{,}479 possible start hours in the dataset. 59 of the 60 draws land on distinct start hours (one exact collision), but the windows are not independent: sorted by start hour, 56 of the 59 adjacent episode pairs have starts within 168~h of each other and therefore temporally overlapping demand histories. We report this honestly as a residual limitation of the evaluation protocol rather than eliminating it, since doing so would require either far more historical data than the five months available or synthetic extrapolation beyond the real dataset; the paired, same-episode-set design at least ensures every controller is compared against exactly the same (partially overlapping) sample.
 
 \section{Results}
 
 \subsection{Headline}
-Table~\ref{tab:ranking} shows every controller by mean episode reward under the corrected, equalised-budget, multi-seed protocol. TODO -- narrative once \texttt{experiment/results/summary.csv} is produced.
+Table~\ref{tab:ranking} shows every controller by mean episode reward under the corrected, equalised-budget protocol, evaluated on the seed-42 run used for pairwise statistical inference. Lowest-Priority-First leads narrowly (143.55~$\pm$~5.91), SAC is a close second (141.44~$\pm$~4.96), and the corrected Greedy is third (138.90~$\pm$~5.64) -- a very different picture from the original submission, where SAC was reported statistically indistinguishable from Lowest-Priority-First ($p=0.15$) and beat Greedy by +16.77 reward. Under the corrected protocol, \emph{every} pairwise comparison against SAC is significant even after Holm correction (all $p<0.001$), including against Lowest-Priority-First; this is a direct consequence of pairing on 60 episodes with low per-episode variance, which gives the test power to detect small effects. We therefore emphasise raw margins alongside significance: SAC's advantage over the corrected Greedy is +2.54 reward ($d=1.46$), an order of magnitude smaller than the +16.77 originally reported against the flawed Greedy, and SAC itself trails Lowest-Priority-First by $-2.12$. Random (132.65) now sits below the corrected Greedy, resolving the anomaly, but still above the original formula-based Greedy (Table~\ref{tab:audit}) and above every other RL variant except TD3, MaskablePPO, and PPO-Large -- a reminder that closing the audited gap did not, by itself, make the discrete RL variants competitive.
 
 \begin{table}[tbp]
-\caption{Controller Ranking (60 Paired Episodes, Holm-Corrected)}
+\caption{Controller Ranking (60 Paired Episodes, Holm-Corrected vs.\ SAC)}
 \label{tab:ranking}
 \begin{center}
 \footnotesize
 \begin{tabular}{|l|c|c|c|}
 \hline
-\textbf{Controller} & \textbf{Reward ($\mu \pm \sigma$)} & \textbf{Jain $J$} & \textbf{Holm $p$ vs.\ best} \\
+\textbf{Controller} & \textbf{Reward ($\mu \pm \sigma$)} & \textbf{Jain $J$} & \textbf{Holm $p$} \\
 \hline
-\multicolumn{4}{|c|}{\emph{TODO -- regenerate from experiment/results/summary.csv}} \\
+LowestPriorityFirst & 143.55 $\pm$ 5.91 & 0.994 & $<$0.001 \\
+\textbf{SAC} & \textbf{141.44 $\pm$ 4.96} & \textbf{0.999} & -- \\
+Greedy (fixed) & 138.90 $\pm$ 5.64 & 0.979 & $<$0.001 \\
+TD3 & 135.60 $\pm$ 4.04 & 0.990 & $<$0.001 \\
+Random & 132.65 $\pm$ 4.52 & 0.996 & $<$0.001 \\
+MaskablePPO & 125.85 $\pm$ 4.83 & 0.999 & $<$0.001 \\
+PPO-Large & 125.82 $\pm$ 5.32 & 0.996 & $<$0.001 \\
+Hybrid-PPO+Greedy & 121.75 $\pm$ 3.12 & 0.984 & $<$0.001 \\
+A2C & 121.42 $\pm$ 5.96 & 0.998 & $<$0.001 \\
+PPO & 121.37 $\pm$ 4.04 & 0.988 & $<$0.001 \\
+PPO-BC & 120.33 $\pm$ 5.66 & 0.999 & $<$0.001 \\
+RoundRobin & 119.59 $\pm$ 4.93 & 0.996 & $<$0.001 \\
+PPO-Curriculum & 115.96 $\pm$ 5.16 & 0.992 & $<$0.001 \\
+QR-DQN & 115.38 $\pm$ 5.84 & 0.990 & $<$0.001 \\
+TRPO & 110.92 $\pm$ 5.01 & 0.994 & $<$0.001 \\
+DQN & 108.28 $\pm$ 5.28 & 0.961 & $<$0.001 \\
+RecurrentPPO & 107.39 $\pm$ 4.13 & 0.976 & $<$0.001 \\
+PPO-Tuned & 106.00 $\pm$ 4.18 & 0.987 & $<$0.001 \\
+StaticPriority & 104.17 $\pm$ 4.32 & 0.960 & $<$0.001 \\
 \hline
+\multicolumn{4}{l}{\footnotesize GreedyFormula omitted here; see Table~\ref{tab:audit} for the audit comparison.}
 \end{tabular}
 \end{center}
 \end{table}
 
-\subsection{Where Reinforcement Learning Beats Heuristics under Severe Deficit}
-Aggregate rewards mask the most operationally important property, namely behaviour under stress. Table~\ref{tab:regime} evaluates the top controllers under each fixed regime. TODO -- narrative once \texttt{experiment/results/sensitivity.csv} is produced.
+\emph{Multi-seed robustness.} Table~\ref{tab:ranking} uses seed 42 for direct comparability with the pairwise tests, but the five headline controllers were each trained across seeds $\{42,\ldots,46\}$ (Fig.~\ref{fig:seeds}). Averaged across seeds, TD3 ($145.0 \pm 6.0$) is nominally \emph{above} SAC ($138.6 \pm 4.7$) and above Lowest-Priority-First -- the opposite ordering from the seed-42 snapshot in Table~\ref{tab:ranking}, where SAC (141.44) beat TD3 (135.60). PPO-Tuned is the least seed-stable of the five (across-seed mean 109.2, std 4.8, range 103--115), while PPO-Large is the most stable (128.6~$\pm$~1.8). This seed-sensitivity is itself a finding: a single-seed headline comparison, as in the original submission, can flip the reported ranking between the two strongest continuous-control methods, and we report both views rather than picking whichever seed is more favourable.
+
+\begin{figure}[tbp]
+\centerline{\includegraphics[width=\linewidth]{figures/fig3_seed_robustness.png}}
+\caption{Per-seed mean episode reward for the five headline controllers across 5 training seeds each. TD3's median exceeds SAC's despite SAC winning on the single seed (42) used for the paired comparison in Table~\ref{tab:ranking}.}
+\label{fig:seeds}
+\end{figure}
+
+\subsection{Per-Regime Behaviour: A Reversed Finding}
+Aggregate rewards mask the most operationally important property, namely behaviour under stress. Table~\ref{tab:regime} evaluates the top controllers under each fixed regime, and Fig.~\ref{fig:regime} plots the same data. The original submission's headline secondary claim was that SAC's advantage over Greedy is \emph{largest} under Emergency-level deficit (2.6$\times$ Greedy's reward). Under the corrected, exact-lookahead Greedy, this finding reverses: Greedy now leads SAC in four of five regimes -- Normal (234.74 vs.\ 201.66), Minor (204.86 vs.\ 198.33), Major (110.45 vs.\ 104.41), and, notably, Emergency itself (47.83 vs.\ 45.26) -- with SAC ahead only narrowly in Moderate (162.97 vs.\ 162.13).
 
 \begin{table}[tbp]
 \caption{Per-Regime Reward (Top-4 Controllers)}
@@ -224,7 +268,11 @@ Aggregate rewards mask the most operationally important property, namely behavio
 \hline
 \textbf{Regime} & \textbf{SAC} & \textbf{Greedy} & \textbf{PPO} & \textbf{StaticPriority} \\
 \hline
-\multicolumn{5}{|c|}{\emph{TODO -- regenerate from experiment/results/sensitivity.csv}} \\
+Normal & 201.66 & \textbf{234.74} & 152.27 & 149.03 \\
+Minor & 198.33 & \textbf{204.86} & 152.42 & 149.03 \\
+Moderate & \textbf{162.97} & 162.13 & 129.26 & 134.51 \\
+Major & 104.41 & \textbf{110.45} & 85.39 & 75.90 \\
+Emergency & 45.26 & \textbf{47.83} & 23.48 & 14.06 \\
 \hline
 \end{tabular}
 \end{center}
@@ -232,28 +280,33 @@ Aggregate rewards mask the most operationally important property, namely behavio
 
 \begin{figure}[tbp]
 \centerline{\includegraphics[width=\linewidth]{figures/fig2_regime_reward.png}}
-\caption{Per-regime reward for the top four controllers. \emph{TODO -- regenerate this figure from the corrected results (experiment/make_figures.py).}}
+\caption{Per-regime reward for the top four controllers under the corrected protocol. The exact-lookahead Greedy now leads SAC in four of five regimes, including Emergency -- the reverse of the original submission's headline secondary finding.}
 \label{fig:regime}
 \end{figure}
 
+This reversal is consistent with, and further explained by, the audit in Section~\ref{sec:audit}: the original Greedy's rounding penalty scales with the \emph{size} of the required cut, since a fixed $\pm 0.05$ discretisation error is applied against a larger deficit fraction precisely when the regime is severe. The original paper's claim that "RL's advantage is largest exactly where adaptive control matters most" was therefore, at least in part, an artifact of the baseline being disproportionately weakened by discretisation error under the conditions where curtailment must be largest -- not solely a demonstration of SAC's adaptivity. SAC nonetheless remains highly competitive with the corrected Greedy across all five regimes (within 3--7\% in every regime except Normal, where the gap is 14\%), and continues to substantially outperform the weaker discrete-action PPO and the non-adaptive StaticPriority baseline in every regime, most sharply under Emergency (SAC 45.26 vs.\ StaticPriority 14.06, a 3.2$\times$ margin).
+
 \section{Discussion}
-% TODO revise narrative once final numbers are in; keep the seed-robustness, multiple-comparison,
-% and reward-sensitivity discussion points below regardless of the exact ranking.
-The audit in Section~\ref{sec:audit} shows that the original Random-beats-Greedy anomaly was a property of a specific, fixable implementation detail -- discretisation rounding in the Greedy heuristic -- rather than a fundamental flaw in the reward design; the oversubscription rescale itself is a physically necessary constraint (served power cannot exceed available power), and its interaction with controller behaviour is now reported quantitatively rather than left implicit.
+The audit in Section~\ref{sec:audit} shows that the original Random-beats-Greedy anomaly was a property of a specific, fixable implementation detail -- discretisation rounding in the Greedy heuristic -- rather than a fundamental flaw in the reward design; the oversubscription rescale itself is a physically necessary constraint (served power cannot exceed available power), and its interaction with controller behaviour is now reported quantitatively rather than left implicit. Fixing that one detail did more than resolve the anomaly: it also reversed the per-regime finding in Section~\ref{sec:audit} that RL's advantage is largest under Emergency deficit, since the flawed baseline was disproportionately penalised precisely where curtailment needed to be largest.
 
-Practitioners deploying Reinforcement Learning for campus load shedding should adopt three guidelines. First, cast the curtailment action as a continuous vector rather than discretising. Second, prefer an off-policy actor-critic such as SAC for sample efficiency on small datasets. Third, evaluate the controller separately under every deficit regime, since aggregate rewards mask the brittleness that matters most, and report seed-to-seed variance for any controller a headline claim rests on.
+The corrected results support a more modest, but better-evidenced, set of claims than the original submission. Continuous-action SAC remains highly competitive with the best deterministic heuristics -- within a few reward points of both Lowest-Priority-First and the corrected Greedy in aggregate, and consistently ahead of every discrete-action RL variant -- but it no longer straightforwardly "beats Greedy by 2.6$\times$ under severe deficit," nor is it statistically indistinguishable from the strongest heuristic. Practitioners deploying Reinforcement Learning for campus load shedding should take three points from this: first, cast the curtailment action as a continuous vector rather than discretising, since discrete RL variants uniformly underperform both the continuous-control methods and the strongest heuristics in our benchmark; second, compare against a \emph{correctly implemented} operator-grade baseline before crediting RL with a win, since a plausible-looking heuristic can be silently miscalibrated in a way that specifically inflates RL's apparent advantage under the conditions that matter most; and third, report seed-to-seed variance for any headline claim, since Table~\ref{tab:ranking}'s single-seed ranking of SAC over TD3 reverses when averaged across five seeds.
 
-\emph{Reward-weight sensitivity.} TODO -- summarise experiment/results/weight\_sensitivity.csv (\(\omega_C\), \(\omega_F\) grid) here; the original notebook already included this analysis (Section 16) and we carry it forward unchanged in spirit.
+\emph{Reward-weight sensitivity.} Re-evaluating the trained SAC policy (unchanged network weights) under reward weights $\omega_C \in \{0.5,1,2,4\}$ and $\omega_F \in \{0,0.5,1,2\}$ (Fig.~\ref{fig:weights}) shows reward increasing monotonically in $\omega_F$ and decreasing monotonically in $\omega_C$, as expected given the policy already achieves near-maximal fairness ($J \approx 0.999$) and low critical-cluster curtailment: reweighting a term the policy already satisfies mechanically scales the reward without indicating any hidden trade-off the policy is exploiting. This is consistent with the original notebook's Section-16 analysis and, carried forward here on the corrected agent, does not reveal reward hacking on either axis.
+
+\begin{figure}[tbp]
+\centerline{\includegraphics[width=0.85\linewidth]{figures/fig5_weight_heatmap.png}}
+\caption{Reward sensitivity of the trained SAC policy to the critical-load weight $\omega_C$ and fairness weight $\omega_F$. Reward scales monotonically with each weight, consistent with a policy that already scores well on both dimensions rather than trading one off against the other.}
+\label{fig:weights}
+\end{figure}
 
 \emph{Eight feeders vs.\ three clusters.} The 55 buildings are physically wired across eight feeders (Section III-A enumerates them for provenance), but control decisions are made at the coarser three-cluster granularity that the campus Works and Physical Planning Department actually uses operationally for shedding policy; the feeder count is retained in the text solely to describe the physical topology of the dataset, not as a second control granularity.
 
 \section{Conclusion}
-We benchmarked fourteen Reinforcement Learning variants against five non-adaptive controllers for load shedding on a five-month dataset from the University of Lagos campus microgrid, under an equalised training budget, multi-seed reporting for the headline controllers, and a Holm-corrected statistical comparison. TODO -- finalise headline numbers. Action-space representation, not algorithmic family, remains the decisive design choice in this domain.
+We benchmarked fourteen Reinforcement Learning variants against five non-adaptive controllers for load shedding on a five-month dataset from the University of Lagos campus microgrid, under an equalised training budget, multi-seed reporting for the headline controllers, and a Holm-corrected statistical comparison. Continuous-action SAC remains close to the strongest deterministic policy in aggregate reward (141.44 vs.\ Lowest-Priority-First's 143.55) and clearly ahead of every discrete-action RL variant, but the margin over a correctly implemented Greedy controller is +2.54 reward, not the +16.77 originally reported, and averaged across five seeds TD3 (145.0) rather than SAC is the strongest continuous-control method. Action-space representation, not algorithmic family, remains the decisive design choice in this domain: every discrete-action RL variant underperforms both continuous-control methods and the two strongest heuristics, exactly as originally claimed. What the corrected analysis withdraws is the stronger claim that RL decisively beats a well-implemented operator-grade baseline, particularly under severe deficit -- the regime where, once Greedy is fixed, it is RL that must work hardest to keep up.
 
-The immediate research agenda will integrate a noisy multi-step forecast of available power into the state, scale to multi-feeder coordination through multi-agent SAC, and extend the environment with on-site solar generation and battery storage. Returning to the core research question, Reinforcement Learning can supplant Greedy on a sub-Saharan campus microgrid provided that the action is treated as continuous and that the deployment context routinely encounters deep supply deficits, exactly the conditions under which deterministic policies are most brittle and adaptive control delivers the largest gains.
+The immediate research agenda will integrate a noisy multi-step forecast of available power into the state, scale to multi-feeder coordination through multi-agent SAC, and extend the environment with on-site solar generation and battery storage. Returning to the core research question, Reinforcement Learning remains a credible alternative to Greedy on a sub-Saharan campus microgrid provided that the action is treated as continuous, but practitioners should not expect it to dominate a correctly implemented operator-grade baseline by a wide margin: the more defensible case for RL here is competitiveness with strong heuristics under a wide range of conditions, together with the ability to adapt online as campus load patterns or priority tables change, rather than a large fixed performance gap.
 
 \section*{Acknowledgment}
-% TODO if applicable
 
 \bibliographystyle{IEEEtran}
 \bibliography{references}
