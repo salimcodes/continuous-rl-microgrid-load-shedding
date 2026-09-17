@@ -1,5 +1,21 @@
 # Camera-ready changes in response to review (submission 196)
 
+**Page limit note (added after first draft):** NIGERCON caps submissions at
+5 pages. The first draft of this revision added a full new section, two new
+tables and two new figures on top of the original accepted paper and ran
+well over budget (~4,600 words prose + 4 figures + 4 tables). It was
+rewritten to match the original's proven float budget — 2 figures (RL loop,
+per-regime chart) and 3 tables (controller zoo, ranking, per-regime) — with
+prose cut roughly in half (~2,260 words) and the audit findings folded into
+existing tables/prose rather than new floats: `GreedyFormula` is now an
+extra row in the ranking table (Table II) instead of a standalone audit
+table, and the seed-robustness / reward-weight-sensitivity figures were
+replaced with one-paragraph summaries. The dropped figures
+(`fig3_seed_robustness.png`, `fig4_oversub_audit.png`,
+`fig5_weight_heatmap.png`) remain in `paper/figures/` if a longer venue or
+supplementary material is ever wanted, but are not referenced by
+`main.tex`.
+
 Reviews: 2x strong accept, 1x weak accept with methodological concerns
 (reviewer 3). This document tracks how each point in `feedback.md` was
 addressed for the camera-ready.
