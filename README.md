@@ -1,1 +1,1 @@
-[Read the preprint (PDF)](./preprint.pdf)
+[Read the preprint (PDF)](./Preprint.pdf)
